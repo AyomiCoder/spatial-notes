@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion } from 'motion/react'
 import type { SoundName } from '../lib/sounds'
 
@@ -16,6 +17,45 @@ interface Props {
 }
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const
+
+// Stable motion props for the brand block. Keeping these out of render
+// avoids new object identities each render, and pairing with memo() means
+// note-count changes don't re-render the inklin text at all.
+const BRAND_INITIAL = { opacity: 0, y: -8 }
+const BRAND_ANIMATE = { opacity: 1, y: 0 }
+const BRAND_TRANSITION = { delay: 0.1, ease: EASE_OUT, duration: 0.5 }
+
+const Brand = memo(function Brand({ count }: { count: number }) {
+  return (
+    <motion.div
+      initial={BRAND_INITIAL}
+      animate={BRAND_ANIMATE}
+      transition={BRAND_TRANSITION}
+      className="pointer-events-none fixed left-5 top-5 z-50 flex items-center gap-2.5"
+    >
+      <div className="grid h-7 w-7 place-items-center rounded-[8px] bg-ink-950 text-white shadow-soft">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="5" cy="5.5" r="1.6" fill="currentColor" />
+          <circle cx="9.5" cy="4.5" r="1.1" fill="currentColor" opacity="0.7" />
+          <circle cx="8" cy="9.5" r="1.35" fill="currentColor" opacity="0.85" />
+        </svg>
+      </div>
+      <div className="leading-none">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[14px] font-semibold tracking-[-0.018em] lowercase text-ink-900">
+            inklin
+          </span>
+          <span className="font-mono text-[9.5px] tracking-tight text-ink-400">
+            /ˈɪŋklɪn/
+          </span>
+        </div>
+        <div className="mt-1 font-mono text-[10px] tracking-tight uppercase text-ink-500">
+          {count} {count === 1 ? 'note' : 'notes'}
+        </div>
+      </div>
+    </motion.div>
+  )
+})
 
 function IconButton({
   label, onClick, primary, children,
@@ -54,34 +94,7 @@ export default function Toolbar({
 
   return (
     <>
-      {/* Top-left brand */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, ease: EASE_OUT, duration: 0.5 }}
-        className="pointer-events-none fixed left-5 top-5 z-50 flex items-center gap-2.5"
-      >
-        <div className="grid h-7 w-7 place-items-center rounded-[8px] bg-ink-950 text-white shadow-soft">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="5" cy="5.5" r="1.6" fill="currentColor" />
-            <circle cx="9.5" cy="4.5" r="1.1" fill="currentColor" opacity="0.7" />
-            <circle cx="8" cy="9.5" r="1.35" fill="currentColor" opacity="0.85" />
-          </svg>
-        </div>
-        <div className="leading-none">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[14px] font-semibold tracking-[-0.018em] lowercase text-ink-900">
-              inklin
-            </span>
-            <span className="font-mono text-[9.5px] tracking-tight text-ink-400">
-              /ˈɪŋklɪn/
-            </span>
-          </div>
-          <div className="mt-1 font-mono text-[10px] tracking-tight uppercase text-ink-500">
-            {count} {count === 1 ? 'note' : 'notes'}
-          </div>
-        </div>
-      </motion.div>
+      <Brand count={count} />
 
       {/* Bottom-center toolbar — liquid glass */}
       <motion.div
@@ -109,8 +122,10 @@ export default function Toolbar({
           <span className="mx-1 h-5 w-px bg-black/[0.08]" />
 
           <IconButton label="Zoom out" onClick={wrap(onZoomOut)}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M3 7h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+              <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.7" />
+              <path d="M9 9l3.2 3.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              <path d="M4 6h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
             </svg>
           </IconButton>
 
@@ -122,8 +137,10 @@ export default function Toolbar({
           </button>
 
           <IconButton label="Zoom in" onClick={wrap(onZoomIn)}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 3v8M3 7h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+              <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.7" />
+              <path d="M9 9l3.2 3.2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              <path d="M6 4v4M4 6h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
             </svg>
           </IconButton>
 

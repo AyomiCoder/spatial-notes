@@ -166,10 +166,11 @@ function NoteCard({
   const handlePointerMove = (e: React.PointerEvent) => {
     const s = dragState.current
     if (!s) return
-    const dx = (e.clientX - s.sx) / scale
-    const dy = (e.clientY - s.sy) / scale
+    const screenDx = e.clientX - s.sx
+    const screenDy = e.clientY - s.sy
 
-    if (!s.moved && Math.hypot(dx, dy) > 3) {
+    // Threshold in screen pixels so sensitivity stays constant across zoom levels.
+    if (!s.moved && Math.hypot(screenDx, screenDy) > 4) {
       s.moved = true
       setDragging(true)
       onSelect()
@@ -177,6 +178,8 @@ function NoteCard({
       playSound('pickup')
     }
     if (s.moved) {
+      const dx = screenDx / scale
+      const dy = screenDy / scale
       s.dx = dx
       s.dy = dy
       s.finalX = s.ox + dx
@@ -360,8 +363,8 @@ function NoteCard({
         initial={{ opacity: 0, scale: 0.92, y: 8 }}
         animate={{
           opacity: 1,
-          y: editing ? -2 : 0,
-          scale: dragging ? 1.035 : editing ? 1.012 : 1,
+          y: 0,
+          scale: dragging ? 1.035 : 1,
           boxShadow: shadow,
         }}
         exit={{ opacity: 0, scale: 0.9, y: -6, transition: { duration: 0.18 } }}
@@ -379,7 +382,7 @@ function NoteCard({
             user's focus (selected or editing), only hidden mid drag/resize. */}
         <div className="relative flex h-7 shrink-0 items-center justify-end gap-0.5 px-2 pt-2">
           <AnimatePresence>
-            {(selected || editing) && !interacting && (
+            {(selected || editing) && !dragging && (
               <>
                 <motion.button
                   key="toggle-kind"
@@ -396,6 +399,7 @@ function NoteCard({
                     onToggleKind()
                   }}
                   aria-label={isTodo ? 'Convert to note' : 'Convert to todo'}
+                  title={isTodo ? 'Convert to note' : 'Convert to todo'}
                   className="grid h-6 w-6 place-items-center rounded-full text-ink-900/55 hover:text-ink-900 hover:bg-black/[0.08] transition-colors"
                 >
                   {isTodo ? (
@@ -437,44 +441,25 @@ function NoteCard({
                     }
                   }}
                   aria-label="Change color"
+                  title="Change color"
                   aria-expanded={pickerOpen}
                   className="grid h-6 w-6 place-items-center rounded-full text-ink-900/55 hover:text-ink-900 hover:bg-black/[0.08] transition-colors"
                 >
-                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
                     <path
-                      d="M7 1.6c-3 0-5.4 2.2-5.4 5 0 1.7 1.1 2.9 2.7 2.9.6 0 1.1.4 1.1 1 0 .3-.2.6-.4.9-.2.3-.4.6-.4 1 0 .7.6 1.1 1.5 1.1 3 0 5.5-2.3 5.5-5.3 0-3.4-2.2-5.6-4.6-5.6z"
+                      d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"
                       stroke="currentColor"
-                      strokeWidth="1.2"
-                      fill="none"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
-                    <circle cx="4.3" cy="5.2" r="0.85" fill="currentColor" />
-                    <circle cx="7" cy="3.8" r="0.85" fill="currentColor" />
-                    <circle cx="9.7" cy="5.2" r="0.85" fill="currentColor" />
-                    <circle cx="10" cy="8" r="0.85" fill="currentColor" />
+                    <circle cx="13.5" cy="6.5" r="1.2" fill="currentColor" />
+                    <circle cx="17.5" cy="10.5" r="1.2" fill="currentColor" />
+                    <circle cx="6.5" cy="12.5" r="1.2" fill="currentColor" />
+                    <circle cx="8.5" cy="7.5" r="1.2" fill="currentColor" />
                   </svg>
                 </motion.button>
 
-                <motion.button
-                  key="delete"
-                  data-no-drag
-                  initial={{ opacity: 0, scale: 0.7 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.7 }}
-                  transition={{ duration: 0.16, ease: EASE_OUT }}
-                  whileTap={{ scale: 0.88 }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    playSound('delete')
-                    onDelete()
-                  }}
-                  aria-label="Delete note"
-                  className="grid h-6 w-6 place-items-center rounded-full text-ink-900/55 hover:text-ink-900 hover:bg-black/[0.08] transition-colors"
-                >
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                    <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </motion.button>
               </>
             )}
           </AnimatePresence>
@@ -493,7 +478,7 @@ function NoteCard({
                 playSound={playSound}
               />
               <AnimatePresence>
-                {todoEmpty && !interacting && (
+                {todoEmpty && !dragging && (
                   <motion.div
                     key="placeholder"
                     initial={{ opacity: 0 }}
@@ -532,7 +517,7 @@ function NoteCard({
               />
 
               <AnimatePresence>
-                {isEmpty && !interacting && (
+                {isEmpty && !dragging && (
                   <motion.div
                     key="placeholder"
                     initial={{ opacity: 0 }}
@@ -552,8 +537,8 @@ function NoteCard({
         {/* Footer — hides on edit AND on interaction */}
         <motion.div
           animate={{
-            opacity: editing || interacting ? 0 : 1,
-            y: editing || interacting ? 4 : 0,
+            opacity: editing || dragging ? 0 : 1,
+            y: editing || dragging ? 4 : 0,
           }}
           transition={{ duration: 0.18, ease: EASE_OUT }}
           className="shrink-0 px-4 pb-2.5 pt-0 font-mono text-[10px] tracking-tight uppercase text-ink-700/55"
