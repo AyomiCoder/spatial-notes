@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/canvas.tsx","./src/components/emptystate.tsx","./src/components/note.tsx","./src/components/toolbar.tsx","./src/hooks/usenotes.ts","./src/hooks/usepanzoom.ts","./src/hooks/usesound.ts","./src/lib/sounds.ts"],"version":"5.9.3"}
