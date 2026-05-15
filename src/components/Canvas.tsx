@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import NoteCard from './Note'
 import Toolbar from './Toolbar'
 import EmptyState from './EmptyState'
+import TrashZone from './TrashZone'
 import { useNotes } from '../hooks/useNotes'
 import { useSound } from '../hooks/useSound'
 import { screenToWorld, usePanZoom } from '../hooks/usePanZoom'
@@ -11,14 +12,51 @@ const GRID_SIZE = 32
 
 export default function Canvas() {
   const surfaceRef = useRef<HTMLDivElement>(null)
-  const { notes, create, update, remove, bringToFront } = useNotes()
+  const { notes, create, update, remove, bringToFront, toggleKind } = useNotes()
   const { enabled: soundEnabled, trigger, toggle: toggleSound } = useSound()
   const { viewport, beginPan, updatePan, endPan, zoomBy, resetView } = usePanZoom({ targetRef: surfaceRef })
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [autoFocusId, setAutoFocusId] = useState<string | null>(null)
+  const [overTrash, setOverTrash] = useState(false)
+  const overTrashRef = useRef(false)
+  const trashRef = useRef<HTMLDivElement>(null)
   const panActive = useRef(false)
+
+  // While a note is being dragged, track pointer against the trash zone.
+  // Pointer capture on the Note pins all events to it, so we watch on window.
+  useEffect(() => {
+    if (!draggingId) {
+      overTrashRef.current = false
+      setOverTrash(false)
+      return
+    }
+    const onMove = (e: PointerEvent) => {
+      const r = trashRef.current?.getBoundingClientRect()
+      if (!r) {
+        overTrashRef.current = false
+        setOverTrash(false)
+        return
+      }
+      const inside =
+        e.clientX >= r.left && e.clientX <= r.right &&
+        e.clientY >= r.top && e.clientY <= r.bottom
+      if (inside !== overTrashRef.current) {
+        overTrashRef.current = inside
+        setOverTrash(inside)
+        if (inside) trigger('pickup')
+      }
+    }
+    window.addEventListener('pointermove', onMove)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      overTrashRef.current = false
+      setOverTrash(false)
+    }
+  }, [draggingId, trigger])
+
+  const shouldDeleteOnDrop = useCallback(() => overTrashRef.current, [])
 
   // Background pan with pointer
   const onSurfacePointerDown = useCallback((e: React.PointerEvent) => {
@@ -183,8 +221,13 @@ export default function Canvas() {
                   remove(n.id)
                   setSelectedId(null)
                 }}
+                onToggleKind={() => {
+                  toggleKind(n.id)
+                  setAutoFocusId(n.id)
+                }}
                 onDragStart={() => setDraggingId(n.id)}
                 onDragEnd={() => setDraggingId(null)}
+                shouldDeleteOnDrop={shouldDeleteOnDrop}
                 playSound={trigger}
               />
             ))}
@@ -216,6 +259,7 @@ export default function Canvas() {
         scale={viewport.scale}
         count={notes.length}
         soundEnabled={soundEnabled}
+        dimmed={draggingId !== null}
         onZoomIn={() => zoomBy(1.2)}
         onZoomOut={() => zoomBy(1 / 1.2)}
         onResetView={resetView}
@@ -223,6 +267,8 @@ export default function Canvas() {
         onToggleSound={toggleSound}
         playSound={trigger}
       />
+
+      <TrashZone ref={trashRef} visible={draggingId !== null} active={overTrash} />
     </div>
   )
 }

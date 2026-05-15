@@ -23,20 +23,32 @@
   --color-paper: #ffffff;
 
   /* Note body tints — Apple Stickies-grade saturation, dark-text-safe */
-  --color-note-cream: #ffdf5c;  /* sticky yellow */
-  --color-note-rose:  #ffa8b8;  /* hot pink */
-  --color-note-sky:   #8ec9ff;  /* clear blue */
-  --color-note-mint:  #8de0a6;  /* spring green */
-  --color-note-lilac: #c0a8ff;  /* lavender */
-  --color-note-sand:  #ffba7a;  /* warm peach */
+  --color-note-cream:  #ffdf5c;  /* sticky yellow */
+  --color-note-banana: #fff09a;  /* soft yellow */
+  --color-note-sand:   #ffba7a;  /* warm peach */
+  --color-note-coral:  #ff9b80;  /* coral */
+  --color-note-rose:   #ffa8b8;  /* hot pink */
+  --color-note-blush:  #ffcedd;  /* light pink */
+  --color-note-lilac:  #c0a8ff;  /* lavender */
+  --color-note-sky:    #8ec9ff;  /* clear blue */
+  --color-note-aqua:   #95dfdc;  /* aqua/teal */
+  --color-note-mint:   #8de0a6;  /* spring green */
+  --color-note-sage:   #c0d8a8;  /* sage */
+  --color-note-slate:  #cdd2dc;  /* slate */
 
   /* Accent colors — for rings, focus glows, branding */
-  --color-accent-cream: #f5b800;
-  --color-accent-rose:  #ff2d55;
-  --color-accent-sky:   #007aff;
-  --color-accent-mint:  #34c759;
-  --color-accent-lilac: #af52de;
-  --color-accent-sand:  #ff9500;
+  --color-accent-cream:  #f5b800;
+  --color-accent-banana: #e8c500;
+  --color-accent-sand:   #ff9500;
+  --color-accent-coral:  #ff6f4d;
+  --color-accent-rose:   #ff2d55;
+  --color-accent-blush:  #ff6d96;
+  --color-accent-lilac:  #af52de;
+  --color-accent-sky:    #007aff;
+  --color-accent-aqua:   #00b8b3;
+  --color-accent-mint:   #34c759;
+  --color-accent-sage:   #6fa45a;
+  --color-accent-slate:  #6f7986;
 
   --color-action: #007aff;
   --color-action-press: #0066d6;
@@ -108,6 +120,17 @@
 
   /* iOS Safari adds a tap highlight on contenteditable — kill it */
   * { -webkit-tap-highlight-color: transparent; }
+
+  /* Default cursor for anything that's actually clickable. Browsers stopped
+     doing this for <button> a few years back, so we put it back. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: default;
+  }
 }
 
 @layer utilities {
@@ -184,4 +207,33 @@
     user-select: none;
     -webkit-user-select: none;
   }
+
+  /* Rich text body inside notes — keep typography tight inside the small
+     sticky shape. Lists indent enough to look intentional but stay narrow. */
+  .rich-body {
+    min-height: 1.5em;
+  }
+  .rich-body b,
+  .rich-body strong { font-weight: 700; }
+  /* Cabinet Grotesk doesn't ship an italic face — explicitly allow the
+     browser to synthesize one so <em>/<i> actually slant. */
+  .rich-body i,
+  .rich-body em {
+    font-style: italic;
+    font-synthesis-style: auto;
+    font-synthesis: style;
+  }
+  .rich-body ul,
+  .rich-body ol {
+    padding-left: 1.25em;
+    margin: 0.1em 0;
+  }
+  .rich-body ul { list-style: disc; }
+  .rich-body ol { list-style: decimal; }
+  .rich-body li { padding-left: 0.15em; }
+  .rich-body li::marker {
+    color: color-mix(in oklab, currentColor 55%, transparent);
+  }
+  .rich-body div + div,
+  .rich-body p + p { margin-top: 0.05em; }
 }

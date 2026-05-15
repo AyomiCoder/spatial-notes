@@ -5,6 +5,8 @@ interface Props {
   scale: number
   count: number
   soundEnabled: boolean
+  /** Hide the bottom toolbar (e.g. while a note is being dragged toward trash). */
+  dimmed?: boolean
   onZoomIn: () => void
   onZoomOut: () => void
   onResetView: () => void
@@ -41,7 +43,7 @@ function IconButton({
 }
 
 export default function Toolbar({
-  scale, count, soundEnabled,
+  scale, count, soundEnabled, dimmed,
   onZoomIn, onZoomOut, onResetView,
   onAdd, onToggleSound, playSound,
 }: Props) {
@@ -67,7 +69,14 @@ export default function Toolbar({
           </svg>
         </div>
         <div className="leading-none">
-          <div className="text-[13.5px] font-semibold tracking-[-0.015em] text-ink-900">Notes</div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[14px] font-semibold tracking-[-0.018em] lowercase text-ink-900">
+              inklin
+            </span>
+            <span className="font-mono text-[9.5px] tracking-tight text-ink-400">
+              /ˈɪŋklɪn/
+            </span>
+          </div>
           <div className="mt-1 font-mono text-[10px] tracking-tight uppercase text-ink-500">
             {count} {count === 1 ? 'note' : 'notes'}
           </div>
@@ -77,8 +86,17 @@ export default function Toolbar({
       {/* Bottom-center toolbar — liquid glass */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.18, ease: EASE_OUT, duration: 0.55 }}
+        animate={{
+          opacity: dimmed ? 0 : 1,
+          y: dimmed ? 14 : 0,
+          scale: dimmed ? 0.95 : 1,
+        }}
+        transition={{
+          delay: dimmed ? 0 : 0.18,
+          ease: EASE_OUT,
+          duration: dimmed ? 0.18 : 0.55,
+        }}
+        style={{ pointerEvents: dimmed ? 'none' : undefined }}
         className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
       >
         <div className="glass flex items-center gap-0.5 rounded-2xl px-1.5 py-1.5">

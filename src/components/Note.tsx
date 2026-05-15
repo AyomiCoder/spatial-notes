@@ -1,7 +1,11 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import type { Note, NoteTint } from '../types'
+import type { Note, NoteTint, TodoItem } from '../types'
 import type { SoundName } from '../lib/sounds'
+import { isHtmlEmpty, sanitizeHtml } from '../lib/format'
+import SelectionToolbar from './SelectionToolbar'
+import TodoList from './TodoList'
+import ColorPicker from './ColorPicker'
 
 interface TintStyle {
   bg: string
@@ -9,12 +13,18 @@ interface TintStyle {
 }
 
 const TINT: Record<NoteTint, TintStyle> = {
-  cream: { bg: 'bg-[var(--color-note-cream)]', accent: '#f5b800' },
-  rose:  { bg: 'bg-[var(--color-note-rose)]',  accent: '#ff2d55' },
-  sky:   { bg: 'bg-[var(--color-note-sky)]',   accent: '#007aff' },
-  mint:  { bg: 'bg-[var(--color-note-mint)]',  accent: '#34c759' },
-  lilac: { bg: 'bg-[var(--color-note-lilac)]', accent: '#af52de' },
-  sand:  { bg: 'bg-[var(--color-note-sand)]',  accent: '#ff9500' },
+  cream:  { bg: 'bg-[var(--color-note-cream)]',  accent: '#f5b800' },
+  banana: { bg: 'bg-[var(--color-note-banana)]', accent: '#e8c500' },
+  sand:   { bg: 'bg-[var(--color-note-sand)]',   accent: '#ff9500' },
+  coral:  { bg: 'bg-[var(--color-note-coral)]',  accent: '#ff6f4d' },
+  rose:   { bg: 'bg-[var(--color-note-rose)]',   accent: '#ff2d55' },
+  blush:  { bg: 'bg-[var(--color-note-blush)]',  accent: '#ff6d96' },
+  lilac:  { bg: 'bg-[var(--color-note-lilac)]',  accent: '#af52de' },
+  sky:    { bg: 'bg-[var(--color-note-sky)]',    accent: '#007aff' },
+  aqua:   { bg: 'bg-[var(--color-note-aqua)]',   accent: '#00b8b3' },
+  mint:   { bg: 'bg-[var(--color-note-mint)]',   accent: '#34c759' },
+  sage:   { bg: 'bg-[var(--color-note-sage)]',   accent: '#6fa45a' },
+  slate:  { bg: 'bg-[var(--color-note-slate)]',  accent: '#6f7986' },
 }
 
 const MIN_W = 180
@@ -52,8 +62,11 @@ interface Props {
   onSelect: () => void
   onChange: (patch: Partial<Note>) => void
   onDelete: () => void
+  onToggleKind: () => void
   onDragStart: () => void
   onDragEnd: () => void
+  /** Read at drop time. If true, the note is deleted instead of placed. */
+  shouldDeleteOnDrop?: () => boolean
   onAutoFocused?: () => void
   playSound: (s: SoundName) => void
 }
@@ -68,10 +81,15 @@ function formatStamp(ts: number) {
 
 function NoteCard({
   note, scale, selected, autoFocus,
-  onSelect, onChange, onDelete, onDragStart, onDragEnd, onAutoFocused, playSound,
+  onSelect, onChange, onDelete, onToggleKind,
+  onDragStart, onDragEnd, shouldDeleteOnDrop,
+  onAutoFocused, playSound,
 }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLDivElement>(null)
+  const paletteBtnRef = useRef<HTMLButtonElement>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerAnchor, setPickerAnchor] = useState<DOMRect | null>(null)
 
   const dragState = useRef<{
     sx: number; sy: number
@@ -92,24 +110,24 @@ function NoteCard({
   const [editing, setEditing] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [resizing, setResizing] = useState(false)
-  const [isEmpty, setIsEmpty] = useState(() => note.body.length === 0)
+  const [isEmpty, setIsEmpty] = useState(() => isHtmlEmpty(note.body))
   const tint = TINT[note.tint] ?? TINT.cream
+  const isTodo = note.kind === 'todo'
 
-  // Sync editor DOM when body changes from outside (e.g. localStorage hydration)
+  // Hydrate the editor DOM when the body changes from outside (storage, conversion).
+  // Avoid clobbering DOM while the user is actively editing — that would reset the caret.
   useEffect(() => {
+    if (isTodo) return
     const el = editorRef.current
-    if (el && !editing && el.innerText !== note.body) {
-      el.innerText = note.body
+    if (el && !editing && el.innerHTML !== note.body) {
+      el.innerHTML = note.body
     }
-    setIsEmpty(note.body.length === 0)
-  }, [note.body, editing])
+    setIsEmpty(isHtmlEmpty(note.body))
+  }, [note.body, editing, isTodo])
 
-  // Reliable focus: useLayoutEffect fires after DOM mutations (contenteditable
-  // already applied) but before paint, so the caret appears in the same frame
-  // the user sees the edit-state transition. This replaces the RAF approach
-  // which raced React's commit and could leave the editor unfocused.
+  // Reliable focus: useLayoutEffect fires after DOM mutations but before paint.
   useLayoutEffect(() => {
-    if (!editing) return
+    if (!editing || isTodo) return
     const el = editorRef.current
     if (!el) return
     el.focus({ preventScroll: true })
@@ -119,7 +137,7 @@ function NoteCard({
     const sel = window.getSelection()
     sel?.removeAllRanges()
     sel?.addRange(range)
-  }, [editing])
+  }, [editing, isTodo])
 
   // ─── Drag ───────────────────────────────────────────────────────────────
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -175,13 +193,22 @@ function NoteCard({
     if (s.rafId !== null) cancelAnimationFrame(s.rafId)
 
     if (s.moved) {
-      if (wrapperRef.current) wrapperRef.current.style.transform = ''
-      onChange({ x: s.finalX, y: s.finalY })
+      const deleting = shouldDeleteOnDrop?.() === true
+      if (deleting) {
+        // Let exit animations run; useNotes removes the note immediately
+        playSound('delete')
+        onDelete()
+      } else {
+        if (wrapperRef.current) wrapperRef.current.style.transform = ''
+        onChange({ x: s.finalX, y: s.finalY })
+        playSound('drop')
+      }
       onDragEnd()
       setDragging(false)
-      playSound('drop')
-    } else {
+    } else if (!isTodo) {
       enterEditing()
+    } else {
+      onSelect()
     }
   }
 
@@ -241,7 +268,7 @@ function NoteCard({
 
   useEffect(() => {
     if (!autoFocus) return
-    enterEditing()
+    if (!isTodo) enterEditing()
     onAutoFocused?.()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFocus])
@@ -254,9 +281,63 @@ function NoteCard({
     }
   }, [])
 
+  const exec = (cmd: 'bold' | 'italic' | 'insertUnorderedList' | 'insertOrderedList') => {
+    const el = editorRef.current
+    if (!el) return
+    el.focus({ preventScroll: true })
+    document.execCommand(cmd, false)
+    // Sync state — execCommand mutates the DOM directly, no input event guaranteed
+    const html = sanitizeHtml(el.innerHTML)
+    setIsEmpty(isHtmlEmpty(html))
+    onChange({ body: html })
+    playSound('tapSoft')
+  }
+
+  const onEditorPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault()
+    const html = e.clipboardData.getData('text/html')
+    const text = e.clipboardData.getData('text/plain')
+    if (html) {
+      const clean = sanitizeHtml(html)
+      document.execCommand('insertHTML', false, clean)
+    } else if (text) {
+      document.execCommand('insertText', false, text)
+    }
+  }
+
+  const onEditorKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      ;(e.target as HTMLDivElement).blur()
+      return
+    }
+    if (!(e.metaKey || e.ctrlKey)) return
+    if (e.key === 'b' || e.key === 'B') { e.preventDefault(); exec('bold') }
+    else if (e.key === 'i' || e.key === 'I') { e.preventDefault(); exec('italic') }
+    else if (e.shiftKey && (e.key === '8' || e.key === '*')) { e.preventDefault(); exec('insertUnorderedList') }
+    else if (e.shiftKey && (e.key === '9' || e.key === '(')) { e.preventDefault(); exec('insertOrderedList') }
+  }
+
+  const onEditorBlur = () => {
+    setEditing(false)
+    // Final sanitization pass so any pasted/exec garbage gets cleaned up before persist
+    const el = editorRef.current
+    if (!el) return
+    const clean = sanitizeHtml(el.innerHTML)
+    if (clean !== el.innerHTML) el.innerHTML = clean
+    if (clean !== note.body) onChange({ body: clean })
+  }
+
+  const onItemsChange = (items: TodoItem[]) => {
+    onChange({ items })
+  }
+
+  const interacting = dragging || resizing
   const mode = resizing ? 'resizing' : dragging ? 'dragging' : editing ? 'editing' : selected ? 'selected' : 'rest'
   const shadow = buildShadow(tint.accent, mode)
-  const interacting = dragging || resizing
+
+  const todoEmpty =
+    isTodo && (!note.items || note.items.length === 0 || (note.items.length === 1 && !note.items[0]!.text.trim()))
 
   return (
     <div
@@ -294,76 +375,178 @@ function NoteCard({
           'no-select overflow-hidden',
         ].join(' ')}
       >
-        {/* Top bar — delete X. Hidden while editing OR interacting. */}
-        <div className="relative flex h-7 shrink-0 items-center justify-end px-2 pt-2">
+        {/* Top bar — kind toggle + delete X. Visible whenever the note is the
+            user's focus (selected or editing), only hidden mid drag/resize. */}
+        <div className="relative flex h-7 shrink-0 items-center justify-end gap-0.5 px-2 pt-2">
           <AnimatePresence>
-            {selected && !editing && !interacting && (
-              <motion.button
-                data-no-drag
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ duration: 0.16, ease: EASE_OUT }}
-                whileTap={{ scale: 0.88 }}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  playSound('delete')
-                  onDelete()
-                }}
-                aria-label="Delete note"
-                className="grid h-6 w-6 place-items-center rounded-full text-ink-900/55 hover:text-ink-900 hover:bg-black/[0.08] transition-colors"
-              >
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                  <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </motion.button>
+            {(selected || editing) && !interacting && (
+              <>
+                <motion.button
+                  key="toggle-kind"
+                  data-no-drag
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ duration: 0.16, ease: EASE_OUT }}
+                  whileTap={{ scale: 0.88 }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    playSound('toggle')
+                    onToggleKind()
+                  }}
+                  aria-label={isTodo ? 'Convert to note' : 'Convert to todo'}
+                  className="grid h-6 w-6 place-items-center rounded-full text-ink-900/55 hover:text-ink-900 hover:bg-black/[0.08] transition-colors"
+                >
+                  {isTodo ? (
+                    // Note icon — three lines
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                      <path d="M3 4h8M3 7h8M3 10h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    // Todo icon — circle-check + line
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                      <circle cx="3.5" cy="4" r="1.7" stroke="currentColor" strokeWidth="1.4" />
+                      <circle cx="3.5" cy="10" r="1.7" stroke="currentColor" strokeWidth="1.4" />
+                      <path d="M2.6 4.1l.7.7 1.1-1.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M7 4h5M7 10h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  )}
+                </motion.button>
+
+                <motion.button
+                  key="palette"
+                  ref={paletteBtnRef}
+                  data-no-drag
+                  data-color-trigger
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ duration: 0.16, ease: EASE_OUT }}
+                  whileTap={{ scale: 0.88 }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    playSound('tapSoft')
+                    if (pickerOpen) {
+                      setPickerOpen(false)
+                    } else {
+                      const rect = paletteBtnRef.current?.getBoundingClientRect() ?? null
+                      setPickerAnchor(rect)
+                      setPickerOpen(true)
+                    }
+                  }}
+                  aria-label="Change color"
+                  aria-expanded={pickerOpen}
+                  className="grid h-6 w-6 place-items-center rounded-full text-ink-900/55 hover:text-ink-900 hover:bg-black/[0.08] transition-colors"
+                >
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <path
+                      d="M7 1.6c-3 0-5.4 2.2-5.4 5 0 1.7 1.1 2.9 2.7 2.9.6 0 1.1.4 1.1 1 0 .3-.2.6-.4.9-.2.3-.4.6-.4 1 0 .7.6 1.1 1.5 1.1 3 0 5.5-2.3 5.5-5.3 0-3.4-2.2-5.6-4.6-5.6z"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      fill="none"
+                    />
+                    <circle cx="4.3" cy="5.2" r="0.85" fill="currentColor" />
+                    <circle cx="7" cy="3.8" r="0.85" fill="currentColor" />
+                    <circle cx="9.7" cy="5.2" r="0.85" fill="currentColor" />
+                    <circle cx="10" cy="8" r="0.85" fill="currentColor" />
+                  </svg>
+                </motion.button>
+
+                <motion.button
+                  key="delete"
+                  data-no-drag
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ duration: 0.16, ease: EASE_OUT }}
+                  whileTap={{ scale: 0.88 }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    playSound('delete')
+                    onDelete()
+                  }}
+                  aria-label="Delete note"
+                  className="grid h-6 w-6 place-items-center rounded-full text-ink-900/55 hover:text-ink-900 hover:bg-black/[0.08] transition-colors"
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </motion.button>
+              </>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Editable body — flex-1 so it fills the resizable area */}
+        {/* Body — fills remaining space and scrolls */}
         <div className="relative flex-1 overflow-auto px-4 pb-3 pt-1">
-          <div
-            ref={editorRef}
-            data-no-drag={editing ? '' : undefined}
-            contentEditable={editing}
-            suppressContentEditableWarning
-            spellCheck={editing}
-            onInput={(e) => {
-              const v = (e.target as HTMLDivElement).innerText
-              setIsEmpty(v.length === 0)
-              onChange({ body: v })
-            }}
-            onBlur={() => setEditing(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                e.preventDefault()
-                ;(e.target as HTMLDivElement).blur()
-              }
-            }}
-            className={[
-              'text-[15px] leading-[1.5] tracking-[-0.005em] text-ink-900',
-              'whitespace-pre-wrap break-words text-pretty',
-              'caret-ink-900 outline-none',
-              editing ? 'cursor-text' : '',
-            ].join(' ')}
-          />
+          {isTodo ? (
+            <>
+              <TodoList
+                items={note.items ?? []}
+                accent={tint.accent}
+                autoFocus={autoFocus}
+                onAutoFocused={onAutoFocused}
+                onChange={onItemsChange}
+                playSound={playSound}
+              />
+              <AnimatePresence>
+                {todoEmpty && !interacting && (
+                  <motion.div
+                    key="placeholder"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.4 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18, ease: EASE_OUT }}
+                    className="pointer-events-none absolute left-[39px] top-1 text-[15px] leading-[1.5] tracking-[-0.005em] text-ink-800"
+                  >
+                    Add a task…
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          ) : (
+            <>
+              <div
+                ref={editorRef}
+                data-no-drag={editing ? '' : undefined}
+                contentEditable={editing}
+                suppressContentEditableWarning
+                spellCheck={editing}
+                onInput={(e) => {
+                  const el = e.currentTarget as HTMLDivElement
+                  setIsEmpty(isHtmlEmpty(el.innerHTML))
+                  onChange({ body: el.innerHTML })
+                }}
+                onBlur={onEditorBlur}
+                onPaste={onEditorPaste}
+                onKeyDown={onEditorKeyDown}
+                className={[
+                  'rich-body text-[15px] leading-[1.5] tracking-[-0.005em] text-ink-900',
+                  'whitespace-pre-wrap break-words text-pretty',
+                  'caret-ink-900 outline-none',
+                  editing ? 'cursor-text' : '',
+                ].join(' ')}
+              />
 
-          <AnimatePresence>
-            {isEmpty && !interacting && (
-              <motion.div
-                key="placeholder"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: editing ? 0.32 : 0.5 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18, ease: EASE_OUT }}
-                className="pointer-events-none absolute left-4 top-1 text-[15px] leading-[1.5] tracking-[-0.005em] text-ink-800"
-              >
-                {editing ? 'Type a thought…' : 'Empty note'}
-              </motion.div>
-            )}
-          </AnimatePresence>
+              <AnimatePresence>
+                {isEmpty && !interacting && (
+                  <motion.div
+                    key="placeholder"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: editing ? 0.32 : 0.5 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.18, ease: EASE_OUT }}
+                    className="pointer-events-none absolute left-4 top-1 text-[15px] leading-[1.5] tracking-[-0.005em] text-ink-800"
+                  >
+                    {editing ? 'Type a thought…' : 'Empty note'}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
         </div>
 
         {/* Footer — hides on edit AND on interaction */}
@@ -402,6 +585,26 @@ function NoteCard({
           </svg>
         </motion.div>
       </motion.div>
+
+      {!isTodo && (
+        <SelectionToolbar
+          hostRef={editorRef}
+          active={editing}
+          onCommand={exec}
+        />
+      )}
+
+      <ColorPicker
+        open={pickerOpen}
+        anchor={pickerAnchor}
+        current={note.tint}
+        onSelect={(tint) => {
+          onChange({ tint })
+          playSound('tapFirm')
+          setPickerOpen(false)
+        }}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   )
 }
