@@ -102,7 +102,11 @@ export default function Toolbar({
     <>
       <Brand count={count} />
 
-      {/* Bottom-center toolbar — liquid glass */}
+      {/* Bottom-center toolbar — liquid glass. We put `.glass` directly on
+          the motion element (not on a child) so backdrop-filter doesn't get
+          blocked by a transformed ancestor. Browsers can drop the blur when
+          an ancestor has transform/filter, which is exactly what we hit in
+          production builds. */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{
@@ -116,9 +120,9 @@ export default function Toolbar({
           duration: dimmed ? 0.18 : 0.55,
         }}
         style={{ pointerEvents: dimmed ? 'none' : undefined }}
-        className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
+        className="glass fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-0.5 rounded-2xl px-1.5 py-1.5"
       >
-        <div className="glass flex items-center gap-0.5 rounded-2xl px-1.5 py-1.5">
+        <>
           <IconButton label="Add note" primary dataTour="add-button" onClick={wrap(onAdd, 'create')}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M7 2.5v9M2.5 7h9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -209,7 +213,7 @@ export default function Toolbar({
               </svg>
             )}
           </IconButton>
-        </div>
+        </>
       </motion.div>
 
       {/* Top-right hint */}

@@ -177,6 +177,9 @@
       );
     backdrop-filter: saturate(220%) blur(32px);
     -webkit-backdrop-filter: saturate(220%) blur(32px);
+    /* Hint to the compositor to keep backdrop-filter in its own layer —
+       helps Safari and Chromium reliably apply the blur in production. */
+    will-change: backdrop-filter, -webkit-backdrop-filter;
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.95),
       inset 0 0 0 0.5px rgba(255, 255, 255, 0.55),
@@ -203,39 +206,39 @@
     background: rgba(255, 255, 255, 0.25);
   }
 
-  /* Dark variants — frosted dark glass. Base luminance is intentionally high
-     enough (~16%) that the pill still has a visible silhouette even when
-     `backdrop-filter` fails to apply (common in production on certain browsers /
-     when a transformed parent creates a containing block). When blur does
-     work, it stacks on top for the proper frosted feel. */
+  /* Dark variants — opaque enough to look like a proper frosted surface
+     even when backdrop-filter is completely disabled by the browser. We layer
+     the gradient on top of a solid base color so there's always a visible
+     darker pill, then bump it lighter for the frosted feel when blur works. */
   [data-theme="dark"] .glass {
-    background:
+    background-color: rgb(28, 30, 36);
+    background-image:
       linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.18) 0%,
-        rgba(255, 255, 255, 0.13) 50%,
-        rgba(255, 255, 255, 0.16) 100%
+        rgba(255, 255, 255, 0.10) 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        rgba(255, 255, 255, 0.08) 100%
       );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.22),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.35),
-      0 0 0 0.5px rgba(255, 255, 255, 0.10),
-      0 6px 14px -4px rgba(0, 0, 0, 0.50),
-      0 22px 48px -12px rgba(0, 0, 0, 0.72);
+      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.10),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.40),
+      0 0 0 0.5px rgba(255, 255, 255, 0.08),
+      0 6px 14px -4px rgba(0, 0, 0, 0.55),
+      0 22px 48px -12px rgba(0, 0, 0, 0.78);
   }
   [data-theme="dark"] .glass-btn {
-    background: rgba(255, 255, 255, 0.10);
+    background-color: rgba(60, 62, 70, 0.55);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
       inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+      inset 0 -1px 0 rgba(0, 0, 0, 0.30);
   }
   [data-theme="dark"] .glass-btn:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background-color: rgba(85, 88, 96, 0.75);
   }
   [data-theme="dark"] .glass-btn:active {
-    background: rgba(255, 255, 255, 0.07);
+    background-color: rgba(45, 47, 53, 0.65);
   }
 
   /* Denser glass for floating popovers — the SelectionToolbar drifts to
@@ -245,20 +248,21 @@
      the surface luminance and the outline contrast so the pill always has
      a defined silhouette. */
   [data-theme="dark"] .glass-popover {
-    background:
+    background-color: rgb(34, 36, 42);
+    background-image:
       linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.22) 0%,
-        rgba(255, 255, 255, 0.16) 50%,
-        rgba(255, 255, 255, 0.19) 100%
+        rgba(255, 255, 255, 0.12) 0%,
+        rgba(255, 255, 255, 0.06) 50%,
+        rgba(255, 255, 255, 0.10) 100%
       );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.26),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.14),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.40),
-      0 0 0 0.5px rgba(255, 255, 255, 0.12),
-      0 8px 18px -4px rgba(0, 0, 0, 0.55),
-      0 22px 50px -12px rgba(0, 0, 0, 0.80);
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.42),
+      0 0 0 0.5px rgba(255, 255, 255, 0.10),
+      0 8px 18px -4px rgba(0, 0, 0, 0.60),
+      0 22px 50px -12px rgba(0, 0, 0, 0.82);
   }
 
   .shadow-soft {
