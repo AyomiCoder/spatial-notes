@@ -54,7 +54,13 @@ const waveVariants: Variants = {
   },
 }
 
-export default function CreditsModal() {
+interface Props {
+  /** Called whenever the modal is closed via any path (dismiss / follow / esc /
+   * backdrop). Used by App to release the tour gate after intro is done. */
+  onDismiss?: () => void
+}
+
+export default function CreditsModal({ onDismiss }: Props) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -81,12 +87,14 @@ export default function CreditsModal() {
   const dismiss = () => {
     setOpen(false)
     markSeen()
+    onDismiss?.()
   }
 
   const follow = () => {
     markSeen()
     window.open('https://x.com/ayomicoder', '_blank', 'noopener,noreferrer')
     setOpen(false)
+    onDismiss?.()
   }
 
   if (typeof document === 'undefined') return null

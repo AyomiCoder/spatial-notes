@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, type Variants } from 'motion/react'
 
-const STORAGE_KEY = 'spatial-notes:changelog:v2'
+// Bump version when the contents change so prior readers see the new entries.
+const STORAGE_KEY = 'spatial-notes:changelog:v4'
 const APPEAR_DELAY_MS = 30_000  // 30s after page load
-const RELEASE_DATE = 'May 15, 2026'
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const
 
@@ -16,55 +16,178 @@ interface Feature {
   icon: React.ReactNode
 }
 
-const FEATURES: Feature[] = [
+interface Release {
+  date: string
+  features: Feature[]
+}
+
+// Note tile backgrounds in features stay bright in both themes (Stickies feel).
+// The dark-ink-900 strokes inside the icons sit on those bright tiles and remain
+// readable regardless of theme.
+const RELEASES: Release[] = [
   {
-    title: 'Rich formatting',
-    desc: 'Bold, italic, bullets — select text or hit ⌘B / ⌘I.',
-    tint: 'var(--color-note-cream)',
-    accent: 'var(--color-accent-cream)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-        <text x="9" y="13.5" textAnchor="middle" fontFamily="var(--font-sans)" fontWeight="800" fontSize="13" fill="var(--color-ink-900)">Aa</text>
-      </svg>
-    ),
+    date: 'May 16, 2026',
+    features: [
+      {
+        title: 'Dark mode',
+        desc: 'Tap the moon in the toolbar — the canvas follows your system by default.',
+        tint: 'var(--color-note-slate)',
+        accent: 'var(--color-accent-slate)',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <path
+              d="M14.4 10.5A5.4 5.4 0 017.5 3.6 6 6 0 1014.4 10.5z"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ),
+      },
+      {
+        title: 'Buttery panning',
+        desc: 'Dragging the canvas now coalesces to one frame — lighter on the hand.',
+        tint: 'var(--color-note-aqua)',
+        accent: 'var(--color-accent-aqua)',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <path
+              d="M3 9h12M11.5 5L15 9l-3.5 4M6.5 5L3 9l3.5 4"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ),
+      },
+      {
+        title: 'Sharper controls',
+        desc: 'Zoom and palette icons got a precision pass at small sizes.',
+        tint: 'var(--color-note-blush)',
+        accent: 'var(--color-accent-blush)',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <circle cx="7.5" cy="7.5" r="4.5" stroke="var(--color-ink-900)" strokeWidth="1.6" />
+            <path
+              d="M11 11l3.5 3.5"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M7.5 5.5v4M5.5 7.5h4"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        ),
+      },
+      {
+        title: 'Interactive tour',
+        desc: 'First visit gets a guided walkthrough. Tap the ? in the toolbar to replay any time.',
+        tint: 'var(--color-note-lilac)',
+        accent: 'var(--color-accent-lilac)',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <path
+              d="M5 2.5v13"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M5 2.8h8.2l-1.8 2.6 1.8 2.6H5"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ),
+      },
+    ],
   },
   {
-    title: 'Notes ↔ to-dos',
-    desc: 'Flip any note into a checkable list, then back again.',
-    tint: 'var(--color-note-mint)',
-    accent: 'var(--color-accent-mint)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-        <circle cx="9" cy="9" r="6" stroke="var(--color-ink-900)" strokeWidth="1.6" />
-        <path d="M5.8 9.1l2.2 2.2 4.2-4.8" stroke="var(--color-ink-900)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: 'Drag to trash',
-    desc: 'Pick up a note and drop it on the bottom zone to delete.',
-    tint: 'var(--color-note-rose)',
-    accent: 'var(--color-accent-rose)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-        <path d="M4 5h10M7 5V3.6c0-.3.3-.6.6-.6h2.8c.3 0 .6.3.6.6V5M5.5 5l.7 9.4c0 .3.3.6.6.6h4.4c.3 0 .6-.3.6-.6L12.5 5M7.5 8v4.5M10.5 8v4.5" stroke="var(--color-ink-900)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    title: 'A dozen colors',
-    desc: 'Twelve tints — tap the palette on any note to recolor.',
-    tint: 'var(--color-note-sky)',
-    accent: 'var(--color-accent-sky)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
-        <path d="M9 2.4c-3.7 0-6.7 2.7-6.7 6.2 0 2.1 1.4 3.6 3.3 3.6.8 0 1.4.5 1.4 1.2 0 .4-.2.8-.5 1.1-.3.3-.5.7-.5 1.2 0 .9.7 1.4 1.9 1.4 3.7 0 6.8-2.9 6.8-6.6 0-4.2-2.7-7.1-5.7-7.1z" stroke="var(--color-ink-900)" strokeWidth="1.4" fill="none" />
-        <circle cx="5.4" cy="6.6" r="0.95" fill="var(--color-accent-rose)" />
-        <circle cx="9"   cy="4.9" r="0.95" fill="var(--color-accent-cream)" />
-        <circle cx="12.6" cy="6.6" r="0.95" fill="var(--color-accent-mint)" />
-        <circle cx="12.8" cy="10"  r="0.95" fill="var(--color-accent-lilac)" />
-      </svg>
-    ),
+    date: 'May 15, 2026',
+    features: [
+      {
+        title: 'Rich formatting',
+        desc: 'Bold, italic, bullets — select text or hit ⌘B / ⌘I.',
+        tint: 'var(--color-note-cream)',
+        accent: 'var(--color-accent-cream)',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <text
+              x="9"
+              y="13.5"
+              textAnchor="middle"
+              fontFamily="var(--font-sans)"
+              fontWeight="800"
+              fontSize="13"
+              fill="var(--color-ink-900)"
+            >
+              Aa
+            </text>
+          </svg>
+        ),
+      },
+      {
+        title: 'Notes ↔ to-dos',
+        desc: 'Flip any note into a checkable list, then back again.',
+        tint: 'var(--color-note-mint)',
+        accent: 'var(--color-accent-mint)',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="9" r="6" stroke="var(--color-ink-900)" strokeWidth="1.6" />
+            <path
+              d="M5.8 9.1l2.2 2.2 4.2-4.8"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ),
+      },
+      {
+        title: 'Drag to trash',
+        desc: 'Pick up a note and drop it on the bottom zone to delete.',
+        tint: 'var(--color-note-rose)',
+        accent: 'var(--color-accent-rose)',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <path
+              d="M4 5h10M7 5V3.6c0-.3.3-.6.6-.6h2.8c.3 0 .6.3.6.6V5M5.5 5l.7 9.4c0 .3.3.6.6.6h4.4c.3 0 .6-.3.6-.6L12.5 5M7.5 8v4.5M10.5 8v4.5"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ),
+      },
+      {
+        title: 'A dozen colors',
+        desc: 'Twelve tints — tap the palette on any note to recolor.',
+        tint: 'var(--color-note-sky)',
+        accent: 'var(--color-accent-sky)',
+        icon: (
+          <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+            <path
+              d="M9 2.4c-3.7 0-6.7 2.7-6.7 6.2 0 2.1 1.4 3.6 3.3 3.6.8 0 1.4.5 1.4 1.2 0 .4-.2.8-.5 1.1-.3.3-.5.7-.5 1.2 0 .9.7 1.4 1.9 1.4 3.7 0 6.8-2.9 6.8-6.6 0-4.2-2.7-7.1-5.7-7.1z"
+              stroke="var(--color-ink-900)"
+              strokeWidth="1.4"
+              fill="none"
+            />
+            <circle cx="5.4" cy="6.6" r="0.95" fill="var(--color-accent-rose)" />
+            <circle cx="9" cy="4.9" r="0.95" fill="var(--color-accent-cream)" />
+            <circle cx="12.6" cy="6.6" r="0.95" fill="var(--color-accent-mint)" />
+            <circle cx="12.8" cy="10" r="0.95" fill="var(--color-accent-lilac)" />
+          </svg>
+        ),
+      },
+    ],
   },
 ]
 
@@ -136,17 +259,23 @@ const triggerVariants: Variants = {
 
 export default function Changelog() {
   const [open, setOpen] = useState(false)
-  const [seen, setSeen] = useState(() => {
+  // Persistent flag: has the user EVER seen this changelog version? Drives the
+  // 30s auto-open so we don't keep interrupting returning users.
+  const [everSeen, setEverSeen] = useState(() => {
     if (typeof window === 'undefined') return false
     try { return localStorage.getItem(STORAGE_KEY) === 'seen' } catch { return false }
   })
+  // Session-only flag: has the user opened the changelog in THIS session?
+  // Resets on every refresh so the red "new" dot reappears each visit until
+  // they pop it open, mimicking an inbox-style notification badge.
+  const [openedThisSession, setOpenedThisSession] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (seen) return
+    if (everSeen) return
     const t = window.setTimeout(() => setOpen(true), APPEAR_DELAY_MS)
     return () => window.clearTimeout(t)
-  }, [seen])
+  }, [everSeen])
 
   useEffect(() => {
     if (!open) return
@@ -158,11 +287,15 @@ export default function Changelog() {
 
   const dismiss = () => {
     setOpen(false)
-    setSeen(true)
+    setEverSeen(true)
+    setOpenedThisSession(true)
     try { localStorage.setItem(STORAGE_KEY, 'seen') } catch {}
   }
 
-  const reopen = () => setOpen(true)
+  const reopen = () => {
+    setOpen(true)
+    setOpenedThisSession(true)
+  }
 
   if (typeof document === 'undefined') return null
 
@@ -182,34 +315,43 @@ export default function Changelog() {
             aria-label="What's new"
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.94 }}
-            className="group fixed bottom-5 left-5 z-40 grid h-10 w-10 place-items-center"
-            style={{
-              background: 'rgba(255,255,255,0.55)',
-              backdropFilter: 'saturate(220%) blur(28px)',
-              WebkitBackdropFilter: 'saturate(220%) blur(28px)',
-              borderRadius: '3px',
-              boxShadow:
-                'inset 0 1px 0 rgba(255,255,255,0.9), ' +
-                'inset 0 0 0 0.5px rgba(255,255,255,0.55), ' +
-                '0 0 0 0.5px rgba(0,0,0,0.06), ' +
-                '0 6px 14px -4px rgba(0,0,0,0.08), ' +
-                '0 14px 32px -10px rgba(0,0,0,0.16)',
-            }}
+            className="glass-btn group fixed bottom-5 left-5 z-40 grid h-10 w-10 place-items-center rounded-[8px]"
           >
-            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" className="text-ink-700 group-hover:text-ink-900 transition-colors">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 18 18"
+              fill="none"
+              className="text-ink-700 group-hover:text-ink-900 dark:text-ink-300 dark:group-hover:text-ink-100 transition-colors"
+            >
+              <rect
+                x="3.5"
+                y="2.5"
+                width="11"
+                height="13"
+                rx="1.7"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
               <path
-                d="M9 1.6l1.4 3.7 3.7 1.4-3.7 1.4L9 11.8 7.6 8.1 3.9 6.7l3.7-1.4L9 1.6zM13.7 11l.7 1.7 1.7.7-1.7.7-.7 1.7-.7-1.7-1.7-.7 1.7-.7.7-1.7zM4.2 11.2l.45 1.1 1.1.45-1.1.45-.45 1.1-.45-1.1-1.1-.45 1.1-.45.45-1.1z"
-                fill="currentColor"
+                d="M6 6.5h6M6 9h6M6 11.5h4"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
               />
             </svg>
-            {!seen && (
+            {!openedThisSession && (
               <motion.span
                 aria-hidden
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 20, delay: 0.8 }}
                 className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full"
-                style={{ background: 'var(--color-accent-rose)', boxShadow: '0 0 0 1.5px white' }}
+                style={{
+                  background: 'var(--color-accent-rose)',
+                  boxShadow: '0 0 0 1.5px var(--color-paper)',
+                }}
               />
             )}
           </motion.button>
@@ -217,7 +359,9 @@ export default function Changelog() {
       </AnimatePresence>
 
       {/* The popup itself — anchored to the same bottom-left corner.
-          No backdrop, no outside-click dismiss. Only the X / "Got it" close it. */}
+          No backdrop, no outside-click dismiss. Only the X / "Got it" close it.
+          Liquid glass surface so it picks up the canvas tint behind it and
+          inherits the dark variants from the .glass utility. */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -229,18 +373,14 @@ export default function Changelog() {
             role="dialog"
             aria-modal="false"
             aria-labelledby="changelog-title"
-            className="fixed bottom-5 left-5 z-40 w-[360px] max-w-[calc(100vw-2.5rem)] overflow-hidden bg-white"
+            className="glass fixed bottom-5 left-5 z-40 flex w-[360px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-[14px]"
             style={{
-              borderRadius: '3px',
               transformOrigin: '0% 100%',
-              boxShadow:
-                '0 1px 0 rgba(255,255,255,0.7) inset, ' +
-                '0 0 0 0.5px rgba(0,0,0,0.08), ' +
-                '0 14px 30px -8px rgba(0,0,0,0.20), ' +
-                '0 28px 64px -12px rgba(0,0,0,0.28)',
+              maxHeight: 'min(560px, calc(100vh - 2.5rem))',
             }}
           >
-            {/* Soft halo at the top */}
+            {/* Soft halo at the top — kept above the scroll area so it doesn't
+                travel with content. */}
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-28"
@@ -251,98 +391,112 @@ export default function Changelog() {
               }}
             />
 
-            {/* Top row — date + close */}
-            <div className="relative flex items-center justify-between px-5 pt-4">
-              <motion.span
-                variants={itemVariants}
-                className="font-mono text-[10px] uppercase tracking-[0.06em] text-ink-500"
-              >
-                {RELEASE_DATE}
-              </motion.span>
-              <motion.button
-                variants={itemVariants}
-                onClick={dismiss}
-                aria-label="Close"
-                whileTap={{ scale: 0.88 }}
-                className="grid h-6 w-6 place-items-center text-ink-500 hover:text-ink-900 hover:bg-black/[0.06] transition-colors"
-                style={{ borderRadius: '3px' }}
-              >
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                  <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              </motion.button>
-            </div>
-
-            <div className="relative px-5 pt-3 pb-5">
-              {/* Hero dots */}
-              <motion.div variants={heroDotsVariants} className="mb-3 flex items-center gap-1.5">
-                {HERO_DOTS.map((c, i) => (
-                  <motion.div
-                    key={i}
-                    variants={heroDotVariants}
-                    className="h-2 w-2 rounded-full"
-                    style={{
-                      background: c,
-                      boxShadow: '0 0 0 0.5px rgba(0,0,0,0.10), inset 0 0.5px 0 rgba(255,255,255,0.6)',
-                    }}
-                  />
-                ))}
-              </motion.div>
+            {/* Header — hero dots, close, title, tagline. Stays put while
+                the section list scrolls underneath. */}
+            <div className="relative shrink-0 px-5 pt-4 pb-3">
+              <div className="flex items-start justify-between">
+                <motion.div
+                  variants={heroDotsVariants}
+                  className="flex items-center gap-1.5 pt-1"
+                >
+                  {HERO_DOTS.map((c, i) => (
+                    <motion.div
+                      key={i}
+                      variants={heroDotVariants}
+                      className="h-2 w-2 rounded-full"
+                      style={{
+                        background: c,
+                        boxShadow:
+                          '0 0 0 0.5px rgba(0,0,0,0.10), inset 0 0.5px 0 rgba(255,255,255,0.6)',
+                      }}
+                    />
+                  ))}
+                </motion.div>
+                <motion.button
+                  variants={itemVariants}
+                  onClick={dismiss}
+                  aria-label="Close"
+                  whileTap={{ scale: 0.88 }}
+                  className="grid h-6 w-6 place-items-center rounded-[6px] text-ink-500 hover:text-ink-900 hover:bg-black/[0.06] dark:text-ink-400 dark:hover:text-ink-100 dark:hover:bg-white/[0.06] transition-colors"
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <path
+                      d="M2.5 2.5l7 7M9.5 2.5l-7 7"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </motion.button>
+              </div>
 
               <motion.h2
                 variants={itemVariants}
                 id="changelog-title"
-                className="text-[20px] font-semibold leading-[1.1] tracking-[-0.022em] text-ink-900"
+                className="mt-3 text-[20px] font-semibold leading-[1.1] tracking-[-0.022em] text-ink-900 dark:text-ink-100"
               >
                 What's new
               </motion.h2>
               <motion.p
                 variants={itemVariants}
-                className="mt-1 text-[13px] leading-[1.45] tracking-[-0.005em] text-ink-500"
+                className="mt-1 text-[13px] leading-[1.45] tracking-[-0.005em] text-ink-500 dark:text-ink-400"
               >
                 A few fresh ways to use your canvas.
               </motion.p>
+            </div>
 
-              <div className="mt-4 flex flex-col gap-3">
-                {FEATURES.map((f) => (
-                  <motion.div
-                    key={f.title}
-                    variants={itemVariants}
-                    className="flex items-start gap-3"
-                  >
-                    <div
-                      className="grid h-8 w-8 shrink-0 place-items-center"
-                      style={{
-                        background: f.tint,
-                        borderRadius: '3px',
-                        boxShadow:
-                          '0 0 0 0.5px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.55), ' +
-                          `0 4px 10px -4px ${f.accent}`,
-                      }}
-                    >
-                      {f.icon}
-                    </div>
-                    <div className="flex-1 pt-[1px]">
-                      <div className="text-[13.5px] font-semibold tracking-[-0.012em] text-ink-900">
-                        {f.title}
+            {/* Scrollable section list. min-h-0 lets this flex child shrink
+                inside the max-height popup so overflow-y-auto kicks in. */}
+            <div className="relative min-h-0 flex-1 overflow-y-auto px-5 pb-2">
+              {RELEASES.map((release, ri) => (
+                <motion.section
+                  key={release.date}
+                  variants={itemVariants}
+                  className={ri === 0 ? '' : 'mt-5 border-t border-black/[0.06] pt-4 dark:border-white/[0.08]'}
+                >
+                  <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-500 dark:text-ink-400">
+                    {release.date}
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {release.features.map((f) => (
+                      <div key={f.title} className="flex items-start gap-3">
+                        <div
+                          className="grid h-8 w-8 shrink-0 place-items-center rounded-[6px]"
+                          style={{
+                            background: f.tint,
+                            boxShadow:
+                              '0 0 0 0.5px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.55), ' +
+                              `0 4px 10px -4px ${f.accent}`,
+                          }}
+                        >
+                          {f.icon}
+                        </div>
+                        <div className="flex-1 pt-[1px]">
+                          <div className="text-[13.5px] font-semibold tracking-[-0.012em] text-ink-900 dark:text-ink-100">
+                            {f.title}
+                          </div>
+                          <div className="mt-0.5 text-[12.5px] leading-[1.4] tracking-[-0.003em] text-ink-600 dark:text-ink-300">
+                            {f.desc}
+                          </div>
+                        </div>
                       </div>
-                      <div className="mt-0.5 text-[12.5px] leading-[1.4] tracking-[-0.003em] text-ink-600">
-                        {f.desc}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    ))}
+                  </div>
+                </motion.section>
+              ))}
+            </div>
 
+            {/* Footer — Got it stays anchored so users can dismiss without
+                scrolling to the bottom. */}
+            <div className="relative shrink-0 px-5 pb-5 pt-3">
               <motion.button
                 variants={itemVariants}
                 onClick={dismiss}
                 whileHover={{ y: -0.5 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 28 }}
-                className="mt-5 h-10 w-full bg-ink-950 text-white text-[13px] font-semibold tracking-[-0.01em]"
+                className="h-10 w-full rounded-[8px] bg-ink-950 text-white text-[13px] font-semibold tracking-[-0.01em] dark:bg-white dark:text-ink-950"
                 style={{
-                  borderRadius: '3px',
                   boxShadow:
                     'inset 0 1px 0 rgba(255,255,255,0.12), 0 4px 12px -2px rgba(0,0,0,0.30)',
                 }}

@@ -46,7 +46,7 @@ export default function EmptyState() {
             initial="initial"
             animate="enter"
             exit="exit"
-            className="text-[40px] font-semibold tracking-[-0.035em] leading-none text-ink-900"
+            className="text-[40px] font-semibold tracking-[-0.035em] leading-none text-ink-900 dark:text-ink-100"
           >
             {phrase.split('').map((ch, i) => (
               <motion.span
@@ -66,12 +66,12 @@ export default function EmptyState() {
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.45, duration: 0.7, ease: EASE_OUT }}
-        className="mt-4 flex items-center justify-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-500"
+        className="mt-4 flex items-center justify-center gap-2 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-500 dark:text-ink-400"
       >
         <motion.span
           animate={{ opacity: [0.4, 1, 0.4] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-          className="h-1 w-1 rounded-full bg-ink-500"
+          className="h-1 w-1 rounded-full bg-ink-500 dark:bg-ink-400"
         />
         Double-click anywhere
       </motion.div>

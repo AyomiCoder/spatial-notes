@@ -59,6 +59,10 @@ interface Props {
   scale: number
   selected: boolean
   autoFocus?: boolean
+  /** While the tour is running, keep the note's chrome (kind toggle, palette,
+   * placeholder, date) visible during drag so the spotlighted note looks
+   * complete instead of stripped-down. */
+  tourActive?: boolean
   onSelect: () => void
   onChange: (patch: Partial<Note>) => void
   onDelete: () => void
@@ -80,7 +84,7 @@ function formatStamp(ts: number) {
 }
 
 function NoteCard({
-  note, scale, selected, autoFocus,
+  note, scale, selected, autoFocus, tourActive,
   onSelect, onChange, onDelete, onToggleKind,
   onDragStart, onDragEnd, shouldDeleteOnDrop,
   onAutoFocused, playSound,
@@ -345,6 +349,7 @@ function NoteCard({
   return (
     <div
       ref={wrapperRef}
+      data-note-id={note.id}
       style={{
         position: 'absolute',
         left: note.x,
@@ -382,7 +387,7 @@ function NoteCard({
             user's focus (selected or editing), only hidden mid drag/resize. */}
         <div className="relative flex h-7 shrink-0 items-center justify-end gap-0.5 px-2 pt-2">
           <AnimatePresence>
-            {(selected || editing) && !dragging && (
+            {(selected || editing || tourActive) && (!dragging || tourActive) && (
               <>
                 <motion.button
                   key="toggle-kind"
@@ -423,6 +428,7 @@ function NoteCard({
                   ref={paletteBtnRef}
                   data-no-drag
                   data-color-trigger
+                  data-tour="palette"
                   initial={{ opacity: 0, scale: 0.7 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.7 }}
@@ -478,7 +484,7 @@ function NoteCard({
                 playSound={playSound}
               />
               <AnimatePresence>
-                {todoEmpty && !dragging && (
+                {todoEmpty && (!dragging || tourActive) && (
                   <motion.div
                     key="placeholder"
                     initial={{ opacity: 0 }}
@@ -517,7 +523,7 @@ function NoteCard({
               />
 
               <AnimatePresence>
-                {isEmpty && !dragging && (
+                {isEmpty && (!dragging || tourActive) && (
                   <motion.div
                     key="placeholder"
                     initial={{ opacity: 0 }}
@@ -537,8 +543,8 @@ function NoteCard({
         {/* Footer — hides on edit AND on interaction */}
         <motion.div
           animate={{
-            opacity: editing || dragging ? 0 : 1,
-            y: editing || dragging ? 4 : 0,
+            opacity: editing || (dragging && !tourActive) ? 0 : 1,
+            y: editing || (dragging && !tourActive) ? 4 : 0,
           }}
           transition={{ duration: 0.18, ease: EASE_OUT }}
           className="shrink-0 px-4 pb-2.5 pt-0 font-mono text-[10px] tracking-tight uppercase text-ink-700/55"
@@ -549,6 +555,7 @@ function NoteCard({
         {/* Resize handle — bottom-right grip. Fades in on hover/selection. */}
         <motion.div
           data-no-drag
+          data-tour="resize"
           onPointerDown={handleResizeDown}
           onPointerMove={handleResizeMove}
           onPointerUp={handleResizeUp}

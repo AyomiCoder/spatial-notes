@@ -130,7 +130,7 @@ export default function SelectionToolbar({ hostRef, active, onCommand }: Props) 
               <path d="M9.5 2.5H6M8 11.5H4.5M8.5 2.5L5.5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </ToolBtn>
-          <span className="mx-1 h-4 w-px bg-black/[0.08]" />
+          <span className="mx-1 h-4 w-px bg-black/[0.08] dark:bg-white/[0.12]" />
           <ToolBtn
             label="Bulleted list"
             active={marks.unordered}
@@ -180,8 +180,8 @@ function ToolBtn({
       className={[
         'grid h-7 w-7 place-items-center rounded-full transition-colors',
         active
-          ? 'bg-ink-900 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]'
-          : 'text-ink-700 hover:text-ink-900 hover:bg-black/[0.06]',
+          ? 'bg-ink-900 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] dark:bg-white dark:text-ink-950'
+          : 'text-ink-700 hover:text-ink-900 hover:bg-black/[0.06] dark:text-ink-200 dark:hover:text-white dark:hover:bg-white/[0.10]',
       ].join(' ')}
     >
       {children}

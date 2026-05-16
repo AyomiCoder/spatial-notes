@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable `dark:` variant tied to [data-theme="dark"] on <html>. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --font-sans:
     "Cabinet Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Display",
@@ -68,6 +71,11 @@
     font-synthesis: none;
   }
 
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --color-paper: #0b0b0d;
+  }
+
   html, body, #root {
     height: 100%;
     overflow: hidden;
@@ -84,8 +92,16 @@
     font-feature-settings: "ss01", "ss02", "cv01", "cv11";
   }
 
-  /* Selection */
-  ::selection { background: color-mix(in oklab, currentColor 18%, transparent); }
+  :root[data-theme="dark"] body {
+    color: #ededf0;
+  }
+
+  /* Selection — bright enough to be obvious on sticky-tint backgrounds in
+     both themes, while still letting the underlying text color show through. */
+  ::selection { background: color-mix(in oklab, var(--color-accent-sky) 38%, transparent); }
+  :root[data-theme="dark"] ::selection {
+    background: color-mix(in oklab, var(--color-accent-sky) 55%, transparent);
+  }
 
   /* Hairline scrollbars when they appear in editable areas */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -185,6 +201,39 @@
   }
   .glass-btn:active {
     background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* Dark variants — same glass material, lowered base luminance so it sits
+     over the dark canvas without glowing. Inner highlight stays subtle so the
+     surface still reads as a piece of frosted glass, not a flat pill. */
+  [data-theme="dark"] .glass {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.07) 0%,
+        rgba(255, 255, 255, 0.04) 50%,
+        rgba(255, 255, 255, 0.06) 100%
+      );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.30),
+      0 0 0 0.5px rgba(255, 255, 255, 0.04),
+      0 6px 14px -4px rgba(0, 0, 0, 0.50),
+      0 22px 48px -12px rgba(0, 0, 0, 0.70);
+  }
+  [data-theme="dark"] .glass-btn {
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.05),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.20);
+  }
+  [data-theme="dark"] .glass-btn:hover {
+    background: rgba(255, 255, 255, 0.10);
+  }
+  [data-theme="dark"] .glass-btn:active {
+    background: rgba(255, 255, 255, 0.03);
   }
 
   .shadow-soft {

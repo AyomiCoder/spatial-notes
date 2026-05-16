@@ -6,14 +6,30 @@ import EmptyState from './EmptyState'
 import TrashZone from './TrashZone'
 import { useNotes } from '../hooks/useNotes'
 import { useSound } from '../hooks/useSound'
+import { useTheme } from '../hooks/useTheme'
 import { screenToWorld, usePanZoom } from '../hooks/usePanZoom'
+import Tour from './Tour'
+
+interface TourHandle {
+  active: boolean
+  step: number
+  start: () => void
+  next: () => void
+  finish: () => void
+}
 
 const GRID_SIZE = 32
 
-export default function Canvas() {
+interface Props {
+  tour: TourHandle
+}
+
+export default function Canvas({ tour }: Props) {
   const surfaceRef = useRef<HTMLDivElement>(null)
   const { notes, create, update, remove, bringToFront, toggleKind } = useNotes()
   const { enabled: soundEnabled, trigger, toggle: toggleSound } = useSound()
+  const { theme, toggle: toggleTheme } = useTheme()
+  const { active: tourActive, step: tourStep, start: tourStart, next: tourNext, finish: tourFinish } = tour
   const { viewport, beginPan, updatePan, endPan, zoomBy, resetView } = usePanZoom({ targetRef: surfaceRef })
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -141,11 +157,13 @@ export default function Canvas() {
   }, [viewport, create])
 
   // Pre-render an SVG dot grid that pans/zooms perfectly with the viewport.
+  // Dot color = currentColor at 8% — the surface element sets its own text
+  // color per theme so the grid stays visible against either page background.
   const gridStyle = useMemo<React.CSSProperties>(() => {
     const size = GRID_SIZE * viewport.scale
     return {
       backgroundImage:
-        'radial-gradient(circle, color-mix(in oklab, currentColor 8%, transparent) 1px, transparent 1px)',
+        'radial-gradient(circle, color-mix(in oklab, currentColor 12%, transparent) 1px, transparent 1px)',
       backgroundSize: `${size}px ${size}px`,
       backgroundPosition: `${viewport.x}px ${viewport.y}px`,
     }
@@ -154,7 +172,7 @@ export default function Canvas() {
   const transform = `translate3d(${viewport.x}px, ${viewport.y}px, 0) scale(${viewport.scale})`
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-white">
+    <div className="relative h-full w-full overflow-hidden bg-white dark:bg-[#0b0b0d]">
       {/* Ambient aurora — gives the liquid-glass toolbar real material to refract.
           Slow-drift gradient blob that sits roughly under the toolbar. */}
       <motion.div
@@ -189,7 +207,7 @@ export default function Canvas() {
         onPointerCancel={onSurfacePointerUp}
         onDoubleClick={onSurfaceDoubleClick}
         className={[
-          'absolute inset-0 z-10 text-ink-900',
+          'absolute inset-0 z-10 text-ink-900 dark:text-ink-200',
           panActive.current ? 'cursor-grabbing' : 'cursor-grab',
         ].join(' ')}
         style={gridStyle}
@@ -211,6 +229,7 @@ export default function Canvas() {
                 scale={viewport.scale}
                 selected={selectedId === n.id}
                 autoFocus={autoFocusId === n.id}
+                tourActive={tourActive}
                 onAutoFocused={() => setAutoFocusId(null)}
                 onSelect={() => {
                   setSelectedId(n.id)
@@ -259,16 +278,31 @@ export default function Canvas() {
         scale={viewport.scale}
         count={notes.length}
         soundEnabled={soundEnabled}
+        theme={theme}
         dimmed={draggingId !== null}
         onZoomIn={() => zoomBy(1.2)}
         onZoomOut={() => zoomBy(1 / 1.2)}
         onResetView={resetView}
         onAdd={addCentered}
         onToggleSound={toggleSound}
+        onToggleTheme={toggleTheme}
+        onReplayTour={tourStart}
         playSound={trigger}
       />
 
       <TrashZone ref={trashRef} visible={draggingId !== null} active={overTrash} />
+
+      <Tour
+        active={tourActive}
+        step={tourStep}
+        notes={notes}
+        onNext={tourNext}
+        onFinish={tourFinish}
+        onSelectNote={(id) => {
+          setSelectedId(id)
+          bringToFront(id)
+        }}
+      />
     </div>
   )
 }
