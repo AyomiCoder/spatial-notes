@@ -112,7 +112,7 @@ export default function SelectionToolbar({ hostRef, active, onCommand }: Props) 
           // Don't let pointerdown blur the editor — keep selection alive
           onPointerDown={(e) => e.preventDefault()}
           onMouseDown={(e) => e.preventDefault()}
-          className="glass flex h-9 items-center gap-0.5 rounded-full px-1.5"
+          className="glass glass-popover flex h-9 items-center gap-0.5 rounded-full px-1.5"
         >
           <ToolBtn label="Bold" active={marks.bold} onClick={() => onCommand('bold')}>
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none">

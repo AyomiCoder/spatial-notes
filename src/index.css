@@ -236,6 +236,29 @@
     background: rgba(255, 255, 255, 0.03);
   }
 
+  /* Denser glass for floating popovers — the SelectionToolbar drifts to
+     wherever the user has selected text, often above a note over the dark
+     canvas. The base .glass dark value (~7% white) reads fine over the
+     aurora-tinted bottom area, but vanishes mid-screen. This variant bumps
+     the surface luminance and the outline contrast so the pill always has
+     a defined silhouette. */
+  [data-theme="dark"] .glass-popover {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.16) 0%,
+        rgba(255, 255, 255, 0.10) 50%,
+        rgba(255, 255, 255, 0.13) 100%
+      );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.38),
+      0 0 0 0.5px rgba(255, 255, 255, 0.10),
+      0 8px 18px -4px rgba(0, 0, 0, 0.55),
+      0 22px 50px -12px rgba(0, 0, 0, 0.78);
+  }
+
   .shadow-soft {
     box-shadow:
       0 1px 2px rgba(0, 0, 0, 0.05),
