@@ -203,37 +203,39 @@
     background: rgba(255, 255, 255, 0.25);
   }
 
-  /* Dark variants — same glass material, lowered base luminance so it sits
-     over the dark canvas without glowing. Inner highlight stays subtle so the
-     surface still reads as a piece of frosted glass, not a flat pill. */
+  /* Dark variants — frosted dark glass. Base luminance is intentionally high
+     enough (~16%) that the pill still has a visible silhouette even when
+     `backdrop-filter` fails to apply (common in production on certain browsers /
+     when a transformed parent creates a containing block). When blur does
+     work, it stacks on top for the proper frosted feel. */
   [data-theme="dark"] .glass {
     background:
       linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.07) 0%,
-        rgba(255, 255, 255, 0.04) 50%,
-        rgba(255, 255, 255, 0.06) 100%
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0.13) 50%,
+        rgba(255, 255, 255, 0.16) 100%
       );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.10),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.30),
-      0 0 0 0.5px rgba(255, 255, 255, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.22),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.35),
+      0 0 0 0.5px rgba(255, 255, 255, 0.10),
       0 6px 14px -4px rgba(0, 0, 0, 0.50),
-      0 22px 48px -12px rgba(0, 0, 0, 0.70);
+      0 22px 48px -12px rgba(0, 0, 0, 0.72);
   }
   [data-theme="dark"] .glass-btn {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.10);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.10),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.05),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.20);
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.22);
   }
   [data-theme="dark"] .glass-btn:hover {
-    background: rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.18);
   }
   [data-theme="dark"] .glass-btn:active {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.07);
   }
 
   /* Denser glass for floating popovers — the SelectionToolbar drifts to
@@ -246,17 +248,17 @@
     background:
       linear-gradient(
         180deg,
-        rgba(255, 255, 255, 0.16) 0%,
-        rgba(255, 255, 255, 0.10) 50%,
-        rgba(255, 255, 255, 0.13) 100%
+        rgba(255, 255, 255, 0.22) 0%,
+        rgba(255, 255, 255, 0.16) 50%,
+        rgba(255, 255, 255, 0.19) 100%
       );
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.22),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
-      inset 0 -1px 1px rgba(0, 0, 0, 0.38),
-      0 0 0 0.5px rgba(255, 255, 255, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.26),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.14),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.40),
+      0 0 0 0.5px rgba(255, 255, 255, 0.12),
       0 8px 18px -4px rgba(0, 0, 0, 0.55),
-      0 22px 50px -12px rgba(0, 0, 0, 0.78);
+      0 22px 50px -12px rgba(0, 0, 0, 0.80);
   }
 
   .shadow-soft {
