@@ -466,6 +466,33 @@ function NoteCard({
                   </svg>
                 </motion.button>
 
+                <motion.button
+                  key="delete"
+                  data-no-drag
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ duration: 0.16, ease: EASE_OUT }}
+                  whileTap={{ scale: 0.88 }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    playSound('delete')
+                    onDelete()
+                  }}
+                  aria-label="Delete note"
+                  title="Delete note"
+                  className="grid h-6 w-6 place-items-center rounded-full text-ink-900/55 hover:text-ink-900 hover:bg-black/[0.08] transition-colors"
+                >
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <path
+                      d="M2.5 2.5l7 7M9.5 2.5l-7 7"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </motion.button>
               </>
             )}
           </AnimatePresence>
