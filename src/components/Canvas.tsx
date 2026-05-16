@@ -6,7 +6,6 @@ import EmptyState from './EmptyState'
 import TrashZone from './TrashZone'
 import { useNotes } from '../hooks/useNotes'
 import { useSound } from '../hooks/useSound'
-import { useTheme } from '../hooks/useTheme'
 import { screenToWorld, usePanZoom } from '../hooks/usePanZoom'
 import Tour from './Tour'
 
@@ -22,13 +21,14 @@ const GRID_SIZE = 32
 
 interface Props {
   tour: TourHandle
+  theme: 'light' | 'dark'
+  onToggleTheme: () => void
 }
 
-export default function Canvas({ tour }: Props) {
+export default function Canvas({ tour, theme, onToggleTheme }: Props) {
   const surfaceRef = useRef<HTMLDivElement>(null)
   const { notes, create, update, remove, bringToFront, toggleKind } = useNotes()
   const { enabled: soundEnabled, trigger, toggle: toggleSound } = useSound()
-  const { theme, toggle: toggleTheme } = useTheme()
   const { active: tourActive, step: tourStep, start: tourStart, next: tourNext, finish: tourFinish } = tour
   const { viewport, beginPan, updatePan, endPan, zoomBy, resetView } = usePanZoom({ targetRef: surfaceRef })
 
@@ -285,7 +285,7 @@ export default function Canvas({ tour }: Props) {
         onResetView={resetView}
         onAdd={addCentered}
         onToggleSound={toggleSound}
-        onToggleTheme={toggleTheme}
+        onToggleTheme={onToggleTheme}
         onReplayTour={tourStart}
         playSound={trigger}
       />

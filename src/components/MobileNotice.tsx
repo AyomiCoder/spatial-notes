@@ -58,7 +58,7 @@ const textVariants: Variants = {
 
 export default function MobileNotice() {
   return (
-    <div className="fixed inset-0 grid place-items-center overflow-hidden bg-white text-ink-900">
+    <div className="fixed inset-0 grid place-items-center overflow-hidden bg-white text-ink-900 dark:bg-[#0b0b0d] dark:text-ink-100">
       {/* Soft drifting aurora — keeps the same vibe as the canvas */}
       <motion.div
         aria-hidden
@@ -94,10 +94,10 @@ export default function MobileNotice() {
           variants={textVariants}
           className="mb-6 flex items-baseline gap-1.5"
         >
-          <span className="text-[15px] font-semibold tracking-[-0.018em] lowercase text-ink-900">
+          <span className="text-[15px] font-semibold tracking-[-0.018em] lowercase text-ink-900 dark:text-ink-100">
             inklin
           </span>
-          <span className="font-mono text-[10px] tracking-tight text-ink-400">
+          <span className="font-mono text-[10px] tracking-tight text-ink-400 dark:text-ink-500">
             /ˈɪŋklɪn/
           </span>
         </motion.div>
@@ -137,38 +137,38 @@ export default function MobileNotice() {
 
         <motion.div
           variants={textVariants}
-          className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-500"
+          className="mb-3 font-mono text-[10.5px] uppercase tracking-[0.12em] text-ink-500 dark:text-ink-400"
         >
           A small ask
         </motion.div>
 
         <motion.h1
           variants={textVariants}
-          className="text-[34px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink-900"
+          className="text-[34px] font-semibold leading-[1.05] tracking-[-0.025em] text-ink-900 dark:text-ink-100"
         >
           Made for room to think
         </motion.h1>
 
         <motion.p
           variants={textVariants}
-          className="mt-4 text-[15px] leading-[1.5] tracking-[-0.005em] text-ink-600"
+          className="mt-4 text-[15px] leading-[1.5] tracking-[-0.005em] text-ink-600 dark:text-ink-300"
         >
           This canvas spreads itself across your screen. Pop it open on an{' '}
-          <span className="font-semibold text-ink-800">iPad</span> or{' '}
-          <span className="font-semibold text-ink-800">desktop</span>{' '}
+          <span className="font-semibold text-ink-800 dark:text-ink-100">iPad</span> or{' '}
+          <span className="font-semibold text-ink-800 dark:text-ink-100">desktop</span>{' '}
           and it'll be right here — full size, full breath.
         </motion.p>
 
         <motion.div
           variants={textVariants}
-          className="mt-10 flex items-center gap-2 font-mono text-[11px] text-ink-400"
+          className="mt-10 flex items-center gap-2 font-mono text-[11px] text-ink-400 dark:text-ink-500"
         >
           <span>made by</span>
           <a
             href="https://x.com/ayomicoder"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-ink-700 underline decoration-ink-300 underline-offset-[3px] hover:decoration-ink-700 transition-colors"
+            className="font-semibold text-ink-700 underline decoration-ink-300 underline-offset-[3px] hover:decoration-ink-700 transition-colors dark:text-ink-200 dark:decoration-ink-500 dark:hover:decoration-ink-100"
           >
             Ayomide Aluko
           </a>
